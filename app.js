@@ -153,3 +153,4 @@ function zipFolder(username, resSource) {
 app.listen(8080, function () {
   console.log('Codepen Downloader listening on port 8080!')
 });
+module.exports = app;

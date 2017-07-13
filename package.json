@@ -1,6 +1,6 @@
 {
-  "name": "node-express",
-  "version": "0.0.0",
+  "name": "codepen-downloader",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "start": "node ./bin/www"
@@ -15,5 +15,18 @@
     "jade": "^1.11.0",
     "morgan": "~1.8.1",
     "serve-favicon": "~2.4.2"
-  }
+  },
+  "description": "Codepen downloader",
+  "main": "app.js",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DanielHearn/codepen-downloader.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DanielHearn/codepen-downloader/issues"
+  },
+  "homepage": "https://github.com/DanielHearn/codepen-downloader#readme"
 }
