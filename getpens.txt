@@ -1,0 +1,71 @@
+function getPens(username, apiHostname, apiUrl, resSource) {
+  var penList = [];
+
+  var fetchingPens = true;
+  var penPage = 1;
+
+  const currOptions = {
+    hostname: apiHostname,
+    path: apiUrl,
+    method: 'GET'
+  };
+  console.log("Starting search");
+
+  async.whilst(
+      function () { return penPage < 50; },
+      //function () { return fetchingPens == true; },
+      function (callback) {
+        currOptions.path = apiUrl + "?page=" + penPage;
+        console.log("Fetch = " + fetchingPens);
+        console.log(currOptions.path);
+        https.get(currOptions, function (res) {
+            var json = '';
+            res.on('data', function (chunk) {
+                json += chunk;
+            });
+            res.on('end', function () {
+                if (res.statusCode === 200) {
+                    try {
+                        var data = JSON.parse(json);
+                        if (data.error == "Error. No Pens.") {
+                          console.log("Ran out of pens");
+                          console.log("Fetch = false");
+                          fetchingPens = false;
+                          penPage = 100;
+                          callback(null, penPage);
+                        } else if (data == undefined) {
+                          console.log("Data undefined");
+                        } else {
+                          for(var i = 0; i < data.data.length; i++) {
+                             console.log(data.data[i].id);
+                             penList.push(data.data[i].id);
+                          }
+                          //async.series([
+                          //]);
+
+                          //penPage++;
+                        }
+                        //console.log(data);
+                        //console.log(data.success);
+                    } catch (e) {
+                        console.log('Error after retrieving pens: ' + e);
+                    }
+                } else {
+                    console.log('Status:', res.statusCode);
+                    resSource.end();
+                }
+            });
+        }).on('error', function (err) {
+          console.log('Error:', err);
+          resSource.end();
+        });
+        penPage++;
+        //callback(null, fetchingPens);
+        callback(null, penPage);
+      },
+      function (err, n) {
+        console.log("--");
+        downloadPens(penList, username, apiHostname, apiUrl, resSource);
+      }
+  );
+}
