@@ -105,7 +105,7 @@ function getPens(username, apiHostname, apiUrl, resSource) {
       function (err, n) {
         console.log("--");
         setTimeout(function(){ downloadPens(penList, username, apiHostname, apiUrl, resSource) }, 3000);
-        setTimeout(function(){ zipFolder(username, resSource) },8000);
+        setTimeout(function(){ zipFolder(username, resSource) },10000);
       }
   );
 }

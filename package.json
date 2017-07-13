@@ -11,6 +11,8 @@
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.3",
     "download-file": "^0.1.5",
+    "easy-zip": "0.0.4",
+    "easy-zip2": "^1.0.0",
     "express": "^4.15.3",
     "jade": "^1.11.0",
     "morgan": "~1.8.1",
