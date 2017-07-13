@@ -138,10 +138,10 @@ function zipFolder(username, resSource) {
         try {
           setTimeout(function(){
               rimraf(__dirname + directory + username + "/", function(error) {
-                      console.log('Rimraf error: ', error);
+                      console.log('Rimraf error: ' + error);
           });},4000);
         } catch (e) {
-          console.log('Rimraf error: ', e);
+          console.log('Rimraf error: ' + e);
         }
     });
     console.log("Finished zipping");
