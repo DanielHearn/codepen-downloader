@@ -8,6 +8,9 @@ var rimraf = require('rimraf');
 var async = require('async');
 var EasyZip = require('easy-zip').EasyZip;
 
+
+const request = require('request-promise')
+
 var path = require('path');
 var router = express.Router();
 
@@ -37,15 +40,135 @@ app.get('/download', function (req, res) {
   var apiHostname = "cpv2api.com"
   var apiUrl =  "/pens/public/" + username;
 
-  getPens(username, apiHostname, apiUrl, res);
+
+  async.series([
+      function (callback) {
+
+        var penList = [];
+        var fetchingPens = true;
+        var penPage = 1;
+
+        const currOptions = {
+          hostname: apiHostname,
+          path: apiUrl,
+          method: 'GET'
+        };
+        console.log("Starting search");
+
+        async.whilst(
+            function () { return penPage < 100; },
+            //function () { return fetchingPens == true; },
+            function (callback) {
+              //currOptions.path = apiUrl + "?page=" + penPage;
+              //console.log("Fetch = " + fetchingPens);
+              //console.log(currOptions.path);
+
+              const options = {
+                method: 'GET',
+                uri: "http://" + apiHostname +  apiUrl + "?page=" + penPage,
+                json: true
+              }
+              request(options)
+                .then(function (response) {
+                  if (response.success == "Error. No Pens.") {
+                    console.log("Ran out of pens");
+                    //console.log("Fetch = false");
+                  } else if (response == undefined) {
+                    console.log("Data undefined");
+                  } else {
+                    //console.log(response.data[);
+                    for(var i = 0; i < response.length; i++) {
+                       console.log(response.data[i].id);
+                       penList.push(response.data[i].id);
+                    }
+                    //async.series([
+                    //]);
+                    //penPage++;
+                  }
+                  //console.log(data);
+                  //console.log(data.success);
+                })
+                .catch(function (err) {
+                  console.log('Error after retrieving pens: ' + err);
+                })
+
+              /*https.get(currOptions, function (res) {
+                  var json = '';
+                  res.on('data', function (chunk) {
+                      json += chunk;
+                  });
+                  res.on('end', function () {
+                      if (res.statusCode === 200) {
+                          try {
+                              var data = JSON.parse(json);
+                              if (data.error == "Error. No Pens.") {
+                                //console.log("Ran out of pens");
+                                //console.log("Fetch = false");
+                                fetchingPens = false;
+                                penPage = 101;
+                              } else if (data == undefined) {
+                                console.log("Data undefined");
+                              } else {
+                                for(var i = 0; i < data.data.length; i++) {
+                                   console.log(data.data[i].id);
+                                   penList.push(data.data[i].id);
+                                }
+                                //async.series([
+                                //]);
+                                //penPage++;
+                              }
+                              //console.log(data);
+                              //console.log(data.success);
+                          } catch (e) {
+                              console.log('Error after retrieving pens: ' + e);
+                          }
+                      } else {
+                          console.log('Status:', res.statusCode);
+                      }
+                  });
+              }).on('error', function (err) {
+                console.log('Error:', err);
+              });*/
+              penPage++;
+              //callback(null, fetchingPens);
+              callback(null, penPage);
+            }
+        );
+          callback(null, penList);
+      },
+      function (callback) {
+          console.log('Second Execute.. ');
+          callback(null, 'userDependentData');
+      }
+  ],
+  function (err, result) {
+      console.log(result);
+  });
+
+
+  /*
+  async.series([
+      function(callback) {
+          getPens(username, apiHostname, apiUrl, res, penList, fetchingPens, penPage);
+          callback(null, '---one---');
+      },
+      function(callback) {
+          downloadPens(penList, username, apiHostname, apiUrl, res);
+          callback(null, '---two---');
+      },
+      function(callback) {
+          zipFolder(username, res);
+          callback(null, '---three---');
+      }
+  ],
+  function(err, results) {
+    console.log(results);
+  });*/
+  //getPens(username, apiHostname, apiUrl, res);
 });
 
-function getPens(username, apiHostname, apiUrl, resSource) {
+function getPens(username, apiHostname, apiUrl, resSource, penList, fetchingPens, penPage) {
   var penList = [];
-
-  var fetchingPens = true;
-  var penPage = 1;
-
   const currOptions = {
     hostname: apiHostname,
     path: apiUrl,
@@ -78,12 +201,11 @@ function getPens(username, apiHostname, apiUrl, resSource) {
                           console.log("Data undefined");
                         } else {
                           for(var i = 0; i < data.data.length; i++) {
-                             //console.log(data.data[i].id);
+                             console.log(data.data[i].id);
                              penList.push(data.data[i].id);
                           }
                           //async.series([
                           //]);
-
                           //penPage++;
                         }
                         //console.log(data);
@@ -104,24 +226,21 @@ function getPens(username, apiHostname, apiUrl, resSource) {
       },
       function (err, n) {
         console.log("--");
-        setTimeout(function(){ downloadPens(penList, username, apiHostname, apiUrl, resSource) }, 3000);
-        setTimeout(function(){ zipFolder(username, resSource) },10000);
+        //setTimeout(function(){ downloadPens(penList, username, apiHostname, apiUrl, resSource) }, 5000);
       }
   );
 }
 
-function downloadPens(penNames, username, apiHostname, apiUrl, resSource) {
-  console.log("Pens: " + penNames.length);
+function downloadPens(penList, username, apiHostname, apiUrl, resSource) {
+  console.log("Pens: " + penList.length);
   console.log("Finished pen search");
   var userDir = __dirname + directory + username + "/";
   try {
-    for(var i = 0; i < penNames.length; i++) {
-      var pen = penNames[i];
+    penList.forEach(function (filename, fileIndex) {
+      var pen = filename;
       var url = cpUrlStart + username + cpUrlMid + pen;
-      download(url, userDir).then(() => {
-      });
-    }
-    console.log("Finished download");
+      download(url, userDir).then(() => {});
+    });
   } catch (e) {
     console.log("Download loop error: " + e);
   }
@@ -133,13 +252,12 @@ function zipFolder(username, resSource) {
     var zip = new EasyZip();
     zip.zipFolder(sourceFolder, function(err) {
         if (err) return console.log(err);
-        //zip.writeToFile(zipFile);
-        zip.writeToResponse(resSource, username);
         try {
+          zip.writeToResponse(resSource, username);
           setTimeout(function(){
               rimraf(__dirname + directory + username + "/", function(error) {
                       console.log('Rimraf error: ' + error);
-          });},4000);
+          });},5000);
         } catch (e) {
           console.log('Rimraf error: ' + e);
         }
@@ -153,4 +271,5 @@ function zipFolder(username, resSource) {
 app.listen(8080, function () {
   console.log('Codepen Downloader listening on port 8080!')
 });
+
 module.exports = app;
