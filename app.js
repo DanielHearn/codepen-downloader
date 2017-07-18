@@ -20,6 +20,13 @@ var directory = "/dist/";
 
 const https = require('https');
 
+if (!fs.existsSync(dist)){
+    fs.mkdirSync(dist);
+}
+if (!fs.existsSync(zipped)){
+    fs.mkdirSync(zipped);
+}
+
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
@@ -32,7 +39,6 @@ app.get('/', function (req, res) {
 
 app.get('/download', function (req, res) {
   console.log("/download request");
-
   var username = req.query.username;
   downloadPenList(username, res);
 });
