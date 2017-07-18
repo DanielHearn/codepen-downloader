@@ -20,11 +20,11 @@ var directory = "/dist/";
 
 const https = require('https');
 
-if (!fs.existsSync(dist)){
-    fs.mkdirSync(dist);
+if (!fs.existsSync("dist")){
+    fs.mkdirSync("dist");
 }
-if (!fs.existsSync(zipped)){
-    fs.mkdirSync(zipped);
+if (!fs.existsSync("zipped")){
+    fs.mkdirSync("zipped");
 }
 
 app.set('views', path.join(__dirname, 'views'));
