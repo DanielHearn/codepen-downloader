@@ -3,13 +3,13 @@ const app = express()
 
 var http = require('http');
 var fs = require('fs');
-var download = require('download')
+var download = require('download');
 var rimraf = require('rimraf');
 var async = require('async');
-var EasyZip = require('easy-zip').EasyZip;
 
+var archiver = require('archiver-promise');
 
-const request = require('request-promise')
+const request = require('request-promise');
 
 var path = require('path');
 var router = express.Router();
@@ -17,7 +17,6 @@ var router = express.Router();
 const cpUrlStart = "https://codepen.io/";
 const cpUrlMid = "/share/zip/";
 var directory = "/dist/";
-//var filename = "sss" + ".zip";
 
 const https = require('https');
 
@@ -27,245 +26,142 @@ app.set('view engine', 'jade');
 app.use(router);
 app.use(express.static(path.join(__dirname, 'public')));
 
-//rimraf(__dirname + '/dist', function () { console.log('Cleared dist'); });
-
 app.get('/', function (req, res) {
   res.render('index');
-
 });
 
 app.get('/download', function (req, res) {
+  console.log("/download request");
 
   var username = req.query.username;
-  var apiHostname = "cpv2api.com"
-  var apiUrl =  "/pens/public/" + username;
-
-
-  async.series([
-      function (callback) {
-
-        var penList = [];
-        var fetchingPens = true;
-        var penPage = 1;
-
-        const currOptions = {
-          hostname: apiHostname,
-          path: apiUrl,
-          method: 'GET'
-        };
-        console.log("Starting search");
-
-        async.whilst(
-            function () { return penPage < 100; },
-            //function () { return fetchingPens == true; },
-            function (callback) {
-              //currOptions.path = apiUrl + "?page=" + penPage;
-              //console.log("Fetch = " + fetchingPens);
-              //console.log(currOptions.path);
-
-              const options = {
-                method: 'GET',
-                uri: "http://" + apiHostname +  apiUrl + "?page=" + penPage,
-                json: true
-              }
-              request(options)
-                .then(function (response) {
-                  if (response.success == "Error. No Pens.") {
-                    console.log("Ran out of pens");
-                    //console.log("Fetch = false");
-                  } else if (response == undefined) {
-                    console.log("Data undefined");
-                  } else {
-                    //console.log(response.data[);
-                    for(var i = 0; i < response.length; i++) {
-                       console.log(response.data[i].id);
-                       penList.push(response.data[i].id);
-                    }
-                    //async.series([
-                    //]);
-                    //penPage++;
-                  }
-                  //console.log(data);
-                  //console.log(data.success);
-                })
-                .catch(function (err) {
-                  console.log('Error after retrieving pens: ' + err);
-                })
-
-              /*https.get(currOptions, function (res) {
-                  var json = '';
-                  res.on('data', function (chunk) {
-                      json += chunk;
-                  });
-                  res.on('end', function () {
-                      if (res.statusCode === 200) {
-                          try {
-                              var data = JSON.parse(json);
-                              if (data.error == "Error. No Pens.") {
-                                //console.log("Ran out of pens");
-                                //console.log("Fetch = false");
-                                fetchingPens = false;
-                                penPage = 101;
-                              } else if (data == undefined) {
-                                console.log("Data undefined");
-                              } else {
-                                for(var i = 0; i < data.data.length; i++) {
-                                   console.log(data.data[i].id);
-                                   penList.push(data.data[i].id);
-                                }
-                                //async.series([
-                                //]);
-                                //penPage++;
-                              }
-                              //console.log(data);
-                              //console.log(data.success);
-                          } catch (e) {
-                              console.log('Error after retrieving pens: ' + e);
-                          }
-                      } else {
-                          console.log('Status:', res.statusCode);
-                      }
-                  });
-              }).on('error', function (err) {
-                console.log('Error:', err);
-              });*/
-              penPage++;
-              //callback(null, fetchingPens);
-              callback(null, penPage);
-            }
-        );
-          callback(null, penList);
-      },
-      function (callback) {
-          console.log('Second Execute.. ');
-          callback(null, 'userDependentData');
-      }
-  ],
-  function (err, result) {
-      console.log(result);
-  });
-
-
-  /*
-  async.series([
-      function(callback) {
-          getPens(username, apiHostname, apiUrl, res, penList, fetchingPens, penPage);
-          callback(null, '---one---');
-      },
-      function(callback) {
-          downloadPens(penList, username, apiHostname, apiUrl, res);
-          callback(null, '---two---');
-      },
-      function(callback) {
-          zipFolder(username, res);
-          callback(null, '---three---');
-      }
-  ],
-  function(err, results) {
-    console.log(results);
-  });*/
-  //getPens(username, apiHostname, apiUrl, res);
+  downloadPenList(username, res);
 });
 
-function getPens(username, apiHostname, apiUrl, resSource, penList, fetchingPens, penPage) {
-  var penList = [];
-  const currOptions = {
-    hostname: apiHostname,
-    path: apiUrl,
-    method: 'GET'
+function downloadPenList(username, res) {
+  var options = {
+      url: 'http://cpv2api.com/pens/public/' + username,
   };
-  console.log("Starting search");
+
+  var penID = 0;
+  var fetchingPens = true;
+  var penJsonList = [];
 
   async.whilst(
-      function () { return penPage < 100; },
-      //function () { return fetchingPens == true; },
-      function (callback) {
-        currOptions.path = apiUrl + "?page=" + penPage;
-        //console.log("Fetch = " + fetchingPens);
-        //console.log(currOptions.path);
-        https.get(currOptions, function (res) {
-            var json = '';
-            res.on('data', function (chunk) {
-                json += chunk;
-            });
-            res.on('end', function () {
-                if (res.statusCode === 200) {
-                    try {
-                        var data = JSON.parse(json);
-                        if (data.error == "Error. No Pens.") {
-                          //console.log("Ran out of pens");
-                          //console.log("Fetch = false");
-                          fetchingPens = false;
-                          penPage = 101;
-                        } else if (data == undefined) {
-                          console.log("Data undefined");
-                        } else {
-                          for(var i = 0; i < data.data.length; i++) {
-                             console.log(data.data[i].id);
-                             penList.push(data.data[i].id);
-                          }
-                          //async.series([
-                          //]);
-                          //penPage++;
-                        }
-                        //console.log(data);
-                        //console.log(data.success);
-                    } catch (e) {
-                        console.log('Error after retrieving pens: ' + e);
+      function() { return fetchingPens == true; },
+      function(callback) {
+
+          penID++;
+
+          var currOptions = {
+              url: 'http://cpv2api.com/pens/public/' + username + "/?page=" + penID,
+              json: true
+          };
+
+          //console.log(currOptions.url);
+          request.get(currOptions).then(function(body) {
+              var pensJson = body.data;
+              //console.log("Success: " + body.success);
+              if(body.success == 'true') {
+                //console.log(pensJson.length);
+                for(var i = 0; i < pensJson.length; i++) {
+                    if(pensJson[i].id != undefined) {
+                      //console.log(pensJson[i].id);
+                      penJsonList.push(pensJson[i].id);
                     }
-                } else {
-                    console.log('Status:', res.statusCode);
                 }
-            });
-        }).on('error', function (err) {
-          console.log('Error:', err);
-        });
-        penPage++;
-        //callback(null, fetchingPens);
-        callback(null, penPage);
+              } else {
+                fetchingPens = false;
+                console.log("Finished while");
+              }
+              callback(null, fetchingPens);
+          });
       },
       function (err, n) {
-        console.log("--");
-        //setTimeout(function(){ downloadPens(penList, username, apiHostname, apiUrl, resSource) }, 5000);
+        if(penJsonList != null) {
+          console.log("Pens: " + penJsonList.length);
+          downloadPensLocally(penJsonList, username, res);
+          //downloadPenList(penJsonList, username, res);
+        }
       }
   );
 }
 
-function downloadPens(penList, username, apiHostname, apiUrl, resSource) {
-  console.log("Pens: " + penList.length);
-  console.log("Finished pen search");
+function downloadPensLocally(penList, username, res){
   var userDir = __dirname + directory + username + "/";
-  try {
-    penList.forEach(function (filename, fileIndex) {
-      var pen = filename;
-      var url = cpUrlStart + username + cpUrlMid + pen;
-      download(url, userDir).then(() => {});
-    });
-  } catch (e) {
-    console.log("Download loop error: " + e);
-  }
+  async.each(penList, function(pen, callback) {
+    try {
+      var penID = pen;
+      var url = cpUrlStart + username + cpUrlMid + penID;
+      //console.log(url);
+      download(url, userDir).then(() => {
+        callback();
+      });
+    } catch (e) {
+      console.log("Download loop error: " + e);
+    }
+  }, function(err) {
+      if( err ) {
+        console.log('A file failed to download');
+      } else {
+        console.log('All files have been downloaded successfully');
+        zipPens(userDir, username, res);
+      }
+  });
+  console.log("Finished download");
 }
 
-function zipFolder(username, resSource) {
-  var sourceFolder = __dirname  + "/dist/" + username;
-  try {
-    var zip = new EasyZip();
-    zip.zipFolder(sourceFolder, function(err) {
-        if (err) return console.log(err);
-        try {
-          zip.writeToResponse(resSource, username);
-          setTimeout(function(){
-              rimraf(__dirname + directory + username + "/", function(error) {
-                      console.log('Rimraf error: ' + error);
-          });},5000);
-        } catch (e) {
-          console.log('Rimraf error: ' + e);
-        }
+function zipPens(userDir, username, res) {
+  console.log("Starting zip");
+  console.log(userDir);
+
+  var zipFile = __dirname + "/zipped/" + username + ".zip";
+
+  var output = fs.createWriteStream(__dirname + '/zipped/' + username + '.zip');
+  var archive = archiver('zip', {
+      zlib: { level: 9 },
+      store: true
+  });
+
+  archive.on('warning', function(err) {
+    if (err.code === 'ENOENT') {
+        console.log("ENOENT");
+    } else {
+        console.log(err);
+        throw err;
+    }
+  });
+
+  output.on('close', function() {
+    console.log(archive.pointer() + ' total bytes');
+    console.log('archiver has been finalized and the output file descriptor has closed.');
+    res.download(zipFile, username + ".zip", function(err){
+      removePenDirectory(userDir, username, zipFile);
     });
-    console.log("Finished zipping");
-  } catch (e) {
-    console.log("Zip error");
-  }
+  });
+
+  archive.on('error', function(err) {
+    console.log(err);
+  });
+  archive.pipe(output);
+  archive.directory(userDir, false);
+  archive.finalize().then(function(){
+    console.log('Finished zip');
+  });
+}
+
+function removePenDirectory(userDir, username, zipFile) {
+  setTimeout(function(){
+      rimraf(__dirname + directory + username + "/", function(err) {
+      if ( err) {
+        console.log('Rimraf error when removing pen directory: ' + error);
+      }
+  });},1000);
+  setTimeout(function(){
+    fs.unlink(zipFile, (err) => {
+      if (err) throw err;
+      console.log('Successfully deleted zip');
+    });
+  },1000);
 }
 
 app.listen(8080, function () {
