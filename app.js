@@ -141,7 +141,7 @@ function zipPens(userDir, username, res) {
     console.log(archive.pointer() + ' total bytes');
     console.log('archiver has been finalized and the output file descriptor has closed.');
     res.download(zipFile, username + ".zip", function(err){
-      removePenDirectory(userDir, username, zipFile);
+      removePenDirectory(userDir, username, zipFile, res);
     });
   });
 
@@ -155,7 +155,7 @@ function zipPens(userDir, username, res) {
   });
 }
 
-function removePenDirectory(userDir, username, zipFile) {
+function removePenDirectory(userDir, username, zipFile, res) {
   rimraf(__dirname + directory + username + "/", function(err) {
     if ( err) {
       console.log('Rimraf error when removing pen directory: ' + error);
