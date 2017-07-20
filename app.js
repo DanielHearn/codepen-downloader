@@ -1,5 +1,5 @@
-const express = require('express')
-const app = express()
+const express = require('express');
+const app = express();
 
 var http = require('http');
 var fs = require('fs');
@@ -167,10 +167,11 @@ function removePenDirectory(userDir, username, zipFile) {
       if (err) throw err;
       console.log('Successfully deleted zip');
     });
+    res.end();
   },1000);
 }
 
-app.listen(8080, function () {
+app.listen(process.env.PORT || 8080, function () {
   console.log('Codepen Downloader listening on port 8080!')
 });
 
