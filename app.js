@@ -156,19 +156,16 @@ function zipPens(userDir, username, res) {
 }
 
 function removePenDirectory(userDir, username, zipFile) {
-  setTimeout(function(){
-      rimraf(__dirname + directory + username + "/", function(err) {
-      if ( err) {
-        console.log('Rimraf error when removing pen directory: ' + error);
-      }
-  });},1000);
-  setTimeout(function(){
-    fs.unlink(zipFile, (err) => {
-      if (err) throw err;
-      console.log('Successfully deleted zip');
-    });
-    res.end();
-  },1000);
+  rimraf(__dirname + directory + username + "/", function(err) {
+    if ( err) {
+      console.log('Rimraf error when removing pen directory: ' + error);
+    }
+  });
+  fs.unlink(zipFile, (err) => {
+    if (err) throw err;
+    console.log('Successfully deleted zip');
+  });
+  res.end();
 }
 
 app.listen(process.env.PORT || 8080, function () {
