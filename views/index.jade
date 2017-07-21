@@ -3,8 +3,9 @@ extends layout
 block content
   div#penApp(ng-app="downloadApp")
     div#penController(ng-controller="downloadController")
-      h1 Codepen Downloader
-      h2 Enter codepen username to download all of their pens
+      h1 DownPen
+      h2 Codepen downloader/backup tool
+      h3 Enter codepen username to download all of their pens
       div(id="downloadStatus" ng-style="statusColours.current")
         p {{ status }}
         .threedotloader(ng-style="loaderDisplay")

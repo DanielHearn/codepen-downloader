@@ -10,7 +10,7 @@ module.controller('downloadController', function($scope, $http) {
   $scope.submitDownload = function() {
     var username = $scope.text
     var requestUrl = '/download?username=' + username;
-    console.log("Starting response");
+    //console.log("Starting response");
     $scope.status = "Sending request";
     setInput(true);
     $scope.statusColours.current = {background: yellowStatus, display: "block"};
@@ -22,13 +22,13 @@ module.controller('downloadController', function($scope, $http) {
         'Content-Type': 'application/zip',
       }
     }).then(function successCallback(response) {
-        console.log(response);
-        console.log(response.statusText);
+        //console.log(response);
+        //console.log(response.statusText);
         var data = response.data;
           $scope.statusColours.current = {background: greenStatus, display: "block"};
           $scope.loaderDisplay = {display: "none"}
           $scope.status = "Successfull download";
-          console.log("Successfull");
+          //console.log("Successfull");
 
           var blob = new Blob([data], {type: "application/zip"});
           var fileName = username + ".zip";
@@ -38,7 +38,7 @@ module.controller('downloadController', function($scope, $http) {
         $scope.statusColours.current = {background: redStatus, display: "block"};
         $scope.loaderDisplay = {display: "none"}
         var statusText = response.statusText;
-        console.log(statusText);
+        //console.log(statusText);
         $scope.status = statusText;
         setInput(false);
       });

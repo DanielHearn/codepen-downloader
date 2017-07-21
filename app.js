@@ -163,7 +163,6 @@ function zipPens(userDir, username, res) {
     console.log(archive.pointer() + ' total bytes');
     console.log('archiver has been finalized and the output file descriptor has closed.');
 
-
     res.sendFile(zipFile, function(err){
       console.log("Sent file");
       if ( err) {
@@ -198,7 +197,7 @@ function removePenDirectory(userDir, username, zipFile, res) {
 }
 
 app.listen(process.env.PORT || 8080, function () {
-  console.log('Codepen Downloader listening on port 8080!')
+  console.log('Downpen listening on port 8080!')
 });
 
 module.exports = app;
