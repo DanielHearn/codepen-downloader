@@ -11,7 +11,7 @@ module.controller('downloadController', function($scope, $http) {
     var username = $scope.text
     var requestUrl = '/download?username=' + username;
     //console.log("Starting response");
-    $scope.status = "Sending request";
+    $scope.status = "Handling request";
     setInput(true);
     $scope.statusColours.current = {background: yellowStatus, display: "block"};
     $scope.loaderDisplay = {display: "block"}
