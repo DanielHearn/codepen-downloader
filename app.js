@@ -39,7 +39,6 @@ app.get('/', function (req, res) {
 
 app.get('/download', function (req, res) {
   console.log("/download request");
-
   var username = req.query.username;
   if(username != null) {
     var options = {
@@ -48,15 +47,22 @@ app.get('/download', function (req, res) {
     };
     request.get(options).then(function(body) {
       if(body.success == 'true') {
-          downloadPenList(username, res);
+        downloadPenList(username, res);
       } else {
-        console.log("Error no pens found");
+        var errMessage = "Error no pens found";
+        console.log(errMessage);
+        res.writeHead(400, errMessage, {'content-type' : 'text/plain'});
+        res.end(errMessage);
       }
     });
 
     } else {
       console.log("Error invalid username");
+      res.send("Error invalid username");
+      res.statusMessage = "rror invalid username";
+      res.status(400).end();
     }
+
 });
 
 function downloadPenList(username, res) {
@@ -99,7 +105,6 @@ function downloadPenList(username, res) {
         if(penJsonList != null) {
           console.log("Pens: " + penJsonList.length);
           downloadPensLocally(penJsonList, username, res);
-          //downloadPenList(penJsonList, username, res);
         }
       }
   );
@@ -117,10 +122,14 @@ function downloadPensLocally(penList, username, res){
       });
     } catch (e) {
       console.log("Download loop error: " + e);
+      res.writeHead(400, "Pen processing error", {'content-type' : 'text/plain'});
+      res.end(errMessage);
     }
   }, function(err) {
       if( err ) {
         console.log('A file failed to download');
+        res.writeHead(400, "Pen processing error", {'content-type' : 'text/plain'});
+        res.end(errMessage);
       } else {
         console.log('All files have been downloaded successfully');
         zipPens(userDir, username, res);
@@ -135,10 +144,10 @@ function zipPens(userDir, username, res) {
 
   var zipFile = __dirname + "/zipped/" + username + ".zip";
 
-  var output = fs.createWriteStream(__dirname + '/zipped/' + username + '.zip');
-  var archive = archiver('zip', {
+  var output = fs.createWriteStream(zipFile);
+  var archive = archiver(zipFile, {
       zlib: { level: 9 },
-      store: true
+      store: false
   });
 
   archive.on('warning', function(err) {
@@ -153,12 +162,17 @@ function zipPens(userDir, username, res) {
   output.on('close', function() {
     console.log(archive.pointer() + ' total bytes');
     console.log('archiver has been finalized and the output file descriptor has closed.');
-    res.download(zipFile, username + ".zip", function(err){
+
+
+    res.sendFile(zipFile, function(err){
+      console.log("Sent file");
       if ( err) {
-        console.log('Download err: ' + error);
+        console.log('Download err: ' + err);
       }
       removePenDirectory(userDir, username, zipFile, res);
+      res.end();
     });
+
   });
 
   archive.on('error', function(err) {
@@ -181,7 +195,6 @@ function removePenDirectory(userDir, username, zipFile, res) {
     if (err) throw err;
     console.log('Successfully deleted zip');
   });
-  res.end();
 }
 
 app.listen(process.env.PORT || 8080, function () {

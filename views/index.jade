@@ -1,9 +1,20 @@
 extends layout
 
 block content
-  div(ng-app="downloadApp")
-    div(ng-controller="downloadController")
-      h1 Enter codepen username to download all of their pens
+  div#penApp(ng-app="downloadApp")
+    div#penController(ng-controller="downloadController")
+      h1 Codepen Downloader
+      h2 Enter codepen username to download all of their pens
+      div(id="downloadStatus" ng-style="statusColours.current")
+        p {{ status }}
+        .threedotloader(ng-style="loaderDisplay")
+            .dot
+            .dot
+            .dot
       form(ng-submit="submitDownload()")
-          input(type="text" placeholder="Username" ng-model="text" name="username" required)
-          input(type="submit") 
+        input(type="text" id="usernameInput" placeholder="Username" ng-model="text" name="username" required)
+        input(type="submit" id="usernameSubmit")
+      p Developed by
+        a(href="http://danielhearn.co.uk")  Daniel Hearn
+        span , source on
+        a(href="https://github.com/DanielHearn/codepen-downloader")  GitHub

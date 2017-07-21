@@ -1,3 +1,25 @@
+1.0.5 / 2017-03-17
+------------------
+
+- Maintenance. More formal `zlib` attribution and related
+  changes, #93. Thanks to @bastien-roucaries for the help.
+
+
+1.0.4 / 2016-12-15
+------------------
+
+- Bump dev dependencies.
+- Make sure `err.message` is filled on throw.
+- Code examples for utf-16 string encoding & object compression.
+
+
+1.0.3 / 2016-07-25
+------------------
+
+- Maintenance: re-release to properly display latest version in npm registry
+  and badges. Because `npm publish` timestamp used instead of versions.
+
+
 1.0.2 / 2016-07-21
 ------------------
 
