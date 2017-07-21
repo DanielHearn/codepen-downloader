@@ -39,8 +39,22 @@ app.get('/', function (req, res) {
 
 app.get('/download', function (req, res) {
   console.log("/download request");
+
   var username = req.query.username;
-  downloadPenList(username, res);
+  if(username != null) {
+    var options = {
+        url: 'http://cpv2api.com/pens/public/' + username,
+        json: true
+    };
+    if(body.success == 'true') {
+      request.get(options).then(function(body) {
+          downloadPenList(username, res);
+      });
+    } else {
+      console.log("Error no pens found");
+    }
+  }
+
 });
 
 function downloadPenList(username, res) {
@@ -55,14 +69,11 @@ function downloadPenList(username, res) {
   async.whilst(
       function() { return fetchingPens == true; },
       function(callback) {
-
           penID++;
-
           var currOptions = {
               url: 'http://cpv2api.com/pens/public/' + username + "/?page=" + penID,
               json: true
           };
-
           //console.log(currOptions.url);
           request.get(currOptions).then(function(body) {
               var pensJson = body.data;
@@ -141,6 +152,9 @@ function zipPens(userDir, username, res) {
     console.log(archive.pointer() + ' total bytes');
     console.log('archiver has been finalized and the output file descriptor has closed.');
     res.download(zipFile, username + ".zip", function(err){
+      if ( err) {
+        console.log('Download err: ' + error);
+      }
       removePenDirectory(userDir, username, zipFile, res);
     });
   });
