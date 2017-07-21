@@ -46,15 +46,17 @@ app.get('/download', function (req, res) {
         url: 'http://cpv2api.com/pens/public/' + username,
         json: true
     };
-    if(body.success == 'true') {
-      request.get(options).then(function(body) {
+    request.get(options).then(function(body) {
+      if(body.success == 'true') {
           downloadPenList(username, res);
-      });
-    } else {
-      console.log("Error no pens found");
-    }
-  }
+      } else {
+        console.log("Error no pens found");
+      }
+    });
 
+    } else {
+      console.log("Error invalid username");
+    }
 });
 
 function downloadPenList(username, res) {
