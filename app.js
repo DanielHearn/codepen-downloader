@@ -81,7 +81,7 @@ if (cluster.isMaster) {
       } else {
         //console.log("Error invalid username");
         res.send("Error invalid username");
-        res.statusMessage = "rror invalid username";
+        res.statusMessage = "Error invalid username";
         res.status(400).end();
       }
 
@@ -101,8 +101,9 @@ if (cluster.isMaster) {
         //console.log(firstPenPage[i].id);
     }
 
+    setTimeout(requestTimeout, 30000, username, res);
 
-    //console.log("Fetching pens");
+    console.log("Fetching pens");
     async.whilst(
         function() { return fetchingPens == true; },
         function(callback) {
@@ -129,25 +130,31 @@ if (cluster.isMaster) {
                   }
                 } else {
                   fetchingPens = false;
-                  //console.log("Finished while");
+                  console.log("Finished while");
                 }
                 callback(null, fetchingPens);
             });
         },
         function (err, n) {
           if(err) {
-            removePenDirectory(username, res);
+            removePenDirectory(username, zipFile, res);
           } else {
-            //console.log("Pens: " + penJsonList.length);
+            console.log("Pens: " + penJsonList.length);
             downloadPensLocally(penJsonList, username, res);
           }
         }
     );
   }
 
+  function requestTimeout(username, res) {
+    removePenDirectory(username, "noZip", res);
+    res.statusMessage = "Error request timeout, maybe too may pens :(";
+    res.status(400).end();
+  }
+
   function downloadPensLocally(penList, username, res){
     var userDir = __dirname + directory + username + "/";
-    //console.log("Downloading Pens");
+    console.log("Downloading Pens");
 
     async.each(penList, function(pen, callback) {
       try {
@@ -164,19 +171,19 @@ if (cluster.isMaster) {
       }
     }, function(err) {
         if( err ) {
-          //console.log('A file failed to download');
+          console.log('A file failed to download');
           res.writeHead(400, "Pen processing error", {'content-type' : 'text/plain'});
           res.end(errMessage);
         } else {
-          //console.log('All files have been downloaded successfully');
+          console.log('All files have been downloaded successfully');
           zipPens(userDir, username, res);
         }
     });
-    //console.log("Finished download");
+    console.log("Finished download");
   }
 
   function zipPens(userDir, username, res) {
-    //console.log("Starting zip");
+    console.log("Starting zip");
     //console.log(userDir);
 
     var zipFile = __dirname + "/zipped/" + username + ".zip";
@@ -198,13 +205,13 @@ if (cluster.isMaster) {
     });
 
     output.on('close', function() {
-      ////console.log(zip.pointer() + ' total bytes');
-      //console.log('archiver has been finalized and the output file descriptor has closed.');
+      //console.log(zip.pointer() + ' total bytes');
+      console.log('archiver has been finalized and the output file descriptor has closed.');
 
       res.sendFile(zipFile, function(err){
-        //console.log("Sent file");
+        console.log("Sent file");
         if ( err) {
-          //console.log('Download err: ' + err);
+          console.log('Download err: ' + err);
         }
         removePenDirectory(username, zipFile, res);
         res.end();
@@ -213,29 +220,31 @@ if (cluster.isMaster) {
     });
 
     zip.on('error', function(err) {
-      //console.log(err);
+      console.log(err);
     });
     zip.pipe(output);
     zip.directory(userDir, false);
     zip.finalize().then(function(){
-      //console.log('Finished zip');
+      console.log('Finished zip');
     });
   }
 
   function removePenDirectory(username, zipFile, res) {
     rimraf(__dirname + directory + username + "/", function(err) {
       if ( err) {
-        //console.log('Rimraf error when removing pen directory: ' + error);
+        console.log('Rimraf error when removing pen directory: ' + error);
       }
     });
-    fs.unlink(zipFile, (err) => {
-      if (err) throw err;
-      //console.log('Successfully deleted zip');
-    });
+    if(zipFile != "noZip") {
+      fs.unlink(zipFile, (err) => {
+        if (err) throw err;
+        console.log('Successfully deleted zip');
+      });
+    }
   }
 
   app.listen(process.env.PORT || 8080, function () {
-    //console.log('Downpen listening on port 8080!')
+    console.log('Downpen listening on port 8080!')
   });
 
   module.exports = app;
