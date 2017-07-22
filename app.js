@@ -135,8 +135,12 @@ if (cluster.isMaster) {
             });
         },
         function (err, n) {
-          //console.log("Pens: " + penJsonList.length);
-          downloadPensLocally(penJsonList, username, res);
+          if(err) {
+            removePenDirectory(username, res);
+          } else {
+            //console.log("Pens: " + penJsonList.length);
+            downloadPensLocally(penJsonList, username, res);
+          }
         }
     );
   }
@@ -188,7 +192,7 @@ if (cluster.isMaster) {
           //console.log("ENOENT");
       } else {
           //console.log(err);
-          throw err;
+          removePenDirectory(username, zipFile, res);
           res.end();
       }
     });
@@ -202,7 +206,7 @@ if (cluster.isMaster) {
         if ( err) {
           //console.log('Download err: ' + err);
         }
-        removePenDirectory(userDir, username, zipFile, res);
+        removePenDirectory(username, zipFile, res);
         res.end();
       });
 
@@ -218,7 +222,7 @@ if (cluster.isMaster) {
     });
   }
 
-  function removePenDirectory(userDir, username, zipFile, res) {
+  function removePenDirectory(username, zipFile, res) {
     rimraf(__dirname + directory + username + "/", function(err) {
       if ( err) {
         //console.log('Rimraf error when removing pen directory: ' + error);
@@ -236,5 +240,5 @@ if (cluster.isMaster) {
 
   module.exports = app;
 
-  //console.log(`Worker ${process.pid} started`);
+  console.log(`Worker ${process.pid} started`);
 }
