@@ -10,12 +10,9 @@ const request = require('request-promise');
 
 var path = require('path');
 
-
 const cpUrlStart = "https://codepen.io/";
 const cpUrlMid = "/share/zip/";
 var directory = "/dist/";
-
-const cluster = require('cluster');
 
 if (!fs.existsSync("dist")){
     fs.mkdirSync("dist");
@@ -24,6 +21,7 @@ if (!fs.existsSync("zipped")){
     fs.mkdirSync("zipped");
 }
 
+const cluster = require('cluster');
 
 if (cluster.isMaster) {
   console.log(`Master ${process.pid} is running`);
@@ -38,6 +36,7 @@ if (cluster.isMaster) {
     console.log('Worker %d died :(', worker.id);
     cluster.fork();
   });
+
 } else {
 
   const express = require('express');
@@ -112,9 +111,8 @@ if (cluster.isMaster) {
             };
             //console.log(currOptions.url);
             request.get(currOptions).then(function(body) {
+                console.log("Fetching: " + penID);
                 pensJson = body.data;
-                //console.log(pensJson);
-                //console.log("Success: " + body.success);
                 if(body.success == 'true') {
                   //console.log(pensJson.length);
                   for(var i = 0; i < pensJson.length; i++) {
@@ -124,6 +122,7 @@ if (cluster.isMaster) {
                       //if(pensJson[i].id != undefined) {
                       //}
                   }
+                  console.log("Parsed: " + penID);
                 } else {
                   fetchingPens = false;
                   console.log("Finished while");
