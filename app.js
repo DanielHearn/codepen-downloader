@@ -43,6 +43,10 @@ if (cluster.isMaster) {
   const app = express();
   var router = express.Router();
 
+  setInterval(function () {
+    global.gc();
+    console.log("GC");
+  }, 20000);
 
   app.use(compression());
   app.set('views', path.join(__dirname, 'views'));
@@ -148,10 +152,21 @@ if (cluster.isMaster) {
   }
 
   function requestTimeout(username, res) {
-    removePenDirectory(username, "noZip", res);
-    global.gc();
-    res.statusMessage = "Error request timeout, maybe too may pens :(";
-    res.status(400).end();
+    async.series([
+    function(callback) {
+      removePenDirectory(username, "noZip", res);
+        callback(null);
+    },
+    function(callback) {
+        global.gc();
+        res.statusMessage = "Error request timeout, maybe too may pens :(";
+        res.status(400).end();
+        callback(null);
+    }
+    ],
+    function(err) {
+      console.log("Timeout handled");
+    });
   }
 
   function downloadPensLocally(penList, username, res){
