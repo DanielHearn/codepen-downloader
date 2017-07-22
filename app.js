@@ -72,14 +72,14 @@ if (cluster.isMaster) {
           downloadPenList(username, firstPenPage.data, res);
         } else {
           var errMessage = "Error no pens found";
-          console.log(errMessage);
+          //console.log(errMessage);
           res.writeHead(400, errMessage, {'content-type' : 'text/plain'});
           res.end(errMessage);
         }
       });
 
       } else {
-        console.log("Error invalid username");
+        //console.log("Error invalid username");
         res.send("Error invalid username");
         res.statusMessage = "rror invalid username";
         res.status(400).end();
@@ -97,15 +97,12 @@ if (cluster.isMaster) {
     var penJsonList = [];
 
     for(var i = 0; i < firstPenPage.length; i++) {
-        //var penID = pensJson[i].id;
         penJsonList.push(firstPenPage[i].id);
-        console.log(firstPenPage[i].id);
-        //if(pensJson[i].id != undefined) {
-        //}
+        //console.log(firstPenPage[i].id);
     }
 
 
-    console.log("Fetching pens");
+    //console.log("Fetching pens");
     async.whilst(
         function() { return fetchingPens == true; },
         function(callback) {
@@ -118,27 +115,27 @@ if (cluster.isMaster) {
                   'Accept-Charset': 'utf-8',
                 }
             };
-            //console.log(currOptions.url);
+            ////console.log(currOptions.url);
             request.get(currOptions).then(function(body) {
                 pensJson = body.data;
                 if(body.success == 'true') {
-                  //console.log(pensJson.length);
+                  ////console.log(pensJson.length);
                   for(var i = 0; i < pensJson.length; i++) {
                       //var penID = pensJson[i].id;
                       penJsonList.push(pensJson[i].id);
-                      console.log(pensJson[i].id);
+                      //console.log(pensJson[i].id);
                       //if(pensJson[i].id != undefined) {
                       //}
                   }
                 } else {
                   fetchingPens = false;
-                  console.log("Finished while");
+                  //console.log("Finished while");
                 }
                 callback(null, fetchingPens);
             });
         },
         function (err, n) {
-          console.log("Pens: " + penJsonList.length);
+          //console.log("Pens: " + penJsonList.length);
           downloadPensLocally(penJsonList, username, res);
         }
     );
@@ -146,37 +143,37 @@ if (cluster.isMaster) {
 
   function downloadPensLocally(penList, username, res){
     var userDir = __dirname + directory + username + "/";
-    console.log("Downloading Pens");
+    //console.log("Downloading Pens");
 
     async.each(penList, function(pen, callback) {
       try {
         var penID = pen;
         var url = cpUrlStart + username + cpUrlMid + penID;
-        //console.log(url);
+        ////console.log(url);
         download(url, userDir).then(() => {
           callback();
         });
       } catch (e) {
-        console.log("Download loop error: " + e);
+        //console.log("Download loop error: " + e);
         res.writeHead(400, "Pen processing error", {'content-type' : 'text/plain'});
         res.end(errMessage);
       }
     }, function(err) {
         if( err ) {
-          console.log('A file failed to download');
+          //console.log('A file failed to download');
           res.writeHead(400, "Pen processing error", {'content-type' : 'text/plain'});
           res.end(errMessage);
         } else {
-          console.log('All files have been downloaded successfully');
+          //console.log('All files have been downloaded successfully');
           zipPens(userDir, username, res);
         }
     });
-    console.log("Finished download");
+    //console.log("Finished download");
   }
 
   function zipPens(userDir, username, res) {
-    console.log("Starting zip");
-    console.log(userDir);
+    //console.log("Starting zip");
+    //console.log(userDir);
 
     var zipFile = __dirname + "/zipped/" + username + ".zip";
 
@@ -188,22 +185,22 @@ if (cluster.isMaster) {
 
     zip.on('warning', function(err) {
       if (err.code === 'ENOENT') {
-          console.log("ENOENT");
+          //console.log("ENOENT");
       } else {
-          console.log(err);
+          //console.log(err);
           throw err;
           res.end();
       }
     });
 
     output.on('close', function() {
-      //console.log(zip.pointer() + ' total bytes');
-      console.log('archiver has been finalized and the output file descriptor has closed.');
+      ////console.log(zip.pointer() + ' total bytes');
+      //console.log('archiver has been finalized and the output file descriptor has closed.');
 
       res.sendFile(zipFile, function(err){
-        console.log("Sent file");
+        //console.log("Sent file");
         if ( err) {
-          console.log('Download err: ' + err);
+          //console.log('Download err: ' + err);
         }
         removePenDirectory(userDir, username, zipFile, res);
         res.end();
@@ -212,32 +209,32 @@ if (cluster.isMaster) {
     });
 
     zip.on('error', function(err) {
-      console.log(err);
+      //console.log(err);
     });
     zip.pipe(output);
     zip.directory(userDir, false);
     zip.finalize().then(function(){
-      console.log('Finished zip');
+      //console.log('Finished zip');
     });
   }
 
   function removePenDirectory(userDir, username, zipFile, res) {
     rimraf(__dirname + directory + username + "/", function(err) {
       if ( err) {
-        console.log('Rimraf error when removing pen directory: ' + error);
+        //console.log('Rimraf error when removing pen directory: ' + error);
       }
     });
     fs.unlink(zipFile, (err) => {
       if (err) throw err;
-      console.log('Successfully deleted zip');
+      //console.log('Successfully deleted zip');
     });
   }
 
   app.listen(process.env.PORT || 8080, function () {
-    console.log('Downpen listening on port 8080!')
+    //console.log('Downpen listening on port 8080!')
   });
 
   module.exports = app;
 
-  console.log(`Worker ${process.pid} started`);
+  //console.log(`Worker ${process.pid} started`);
 }
