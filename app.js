@@ -45,8 +45,7 @@ if (cluster.isMaster) {
 
   setInterval(function () {
     global.gc();
-    console.log("GC");
-  }, 20000);
+  }, 30000);
 
   app.use(compression());
   app.set('views', path.join(__dirname, 'views'));
@@ -158,13 +157,13 @@ if (cluster.isMaster) {
         callback(null);
     },
     function(callback) {
-        global.gc();
         res.statusMessage = "Error request timeout, maybe too may pens :(";
         res.status(400).end();
         callback(null);
     }
     ],
     function(err) {
+      global.gc();
       console.log("Timeout handled");
     });
   }
@@ -196,7 +195,6 @@ if (cluster.isMaster) {
           zipPens(userDir, username, res);
         }
     });
-    console.log("Finished download");
   }
 
   function zipPens(userDir, username, res) {
