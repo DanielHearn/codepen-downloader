@@ -73,6 +73,7 @@ if (cluster.isMaster) {
         } else {
           var errMessage = "Error no pens found";
           //console.log(errMessage);
+          global.gc();
           res.writeHead(400, errMessage, {'content-type' : 'text/plain'});
           res.end(errMessage);
         }
@@ -148,6 +149,7 @@ if (cluster.isMaster) {
 
   function requestTimeout(username, res) {
     removePenDirectory(username, "noZip", res);
+    global.gc();
     res.statusMessage = "Error request timeout, maybe too may pens :(";
     res.status(400).end();
   }
