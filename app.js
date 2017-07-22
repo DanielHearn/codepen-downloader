@@ -102,7 +102,7 @@ function downloadPenList(username, res) {
                 for(var i = 0; i < pensJson.length; i++) {
                     //var penID = pensJson[i].id;
                     penJsonList.push(pensJson[i].id);
-                    console.log(pensJson[i].id);
+                    //console.log(pensJson[i].id);
                     //if(pensJson[i].id != undefined) {
                     //}
                 }

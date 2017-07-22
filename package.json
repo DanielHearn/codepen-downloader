@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node app.js"
+    "start": "forever start app.js"
   },
   "dependencies": {
     "archiver": "^2.0.0",
