@@ -67,9 +67,9 @@ if (cluster.isMaster) {
             'Accept-Charset': 'utf-8',
           }
       };
-      request.get(options).then(function(body) {
-        if(body.success == 'true') {
-          downloadPenList(username, res);
+      request.get(options).then(function(firstPenPage) {
+        if(firstPenPage.success == 'true') {
+          downloadPenList(username, firstPenPage.data, res);
         } else {
           var errMessage = "Error no pens found";
           console.log(errMessage);
@@ -87,14 +87,23 @@ if (cluster.isMaster) {
 
   });
 
-  function downloadPenList(username, res) {
+  function downloadPenList(username, firstPenPage, res) {
     var options = {
         url: 'http://cpv2api.com/pens/public/' + username,
     };
 
-    var penID = 0;
+    var penID = 1;
     var fetchingPens = true;
     var penJsonList = [];
+
+    for(var i = 0; i < firstPenPage.length; i++) {
+        //var penID = pensJson[i].id;
+        penJsonList.push(firstPenPage[i].id);
+        console.log(firstPenPage[i].id);
+        //if(pensJson[i].id != undefined) {
+        //}
+    }
+
 
     console.log("Fetching pens");
     async.whilst(
@@ -111,18 +120,16 @@ if (cluster.isMaster) {
             };
             //console.log(currOptions.url);
             request.get(currOptions).then(function(body) {
-                console.log("Fetching: " + penID);
                 pensJson = body.data;
                 if(body.success == 'true') {
                   //console.log(pensJson.length);
                   for(var i = 0; i < pensJson.length; i++) {
                       //var penID = pensJson[i].id;
                       penJsonList.push(pensJson[i].id);
-                      //console.log(pensJson[i].id);
+                      console.log(pensJson[i].id);
                       //if(pensJson[i].id != undefined) {
                       //}
                   }
-                  console.log("Parsed: " + penID);
                 } else {
                   fetchingPens = false;
                   console.log("Finished while");
