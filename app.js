@@ -7,8 +7,8 @@ var download = require('download');
 var rimraf = require('rimraf');
 var async = require('async');
 
+var compression = require('compression');
 var archiver = require('archiver-promise');
-
 const request = require('request-promise');
 
 var path = require('path');
@@ -18,7 +18,7 @@ const cpUrlStart = "https://codepen.io/";
 const cpUrlMid = "/share/zip/";
 var directory = "/dist/";
 
-const https = require('https');
+//const https = require('https');
 
 if (!fs.existsSync("dist")){
     fs.mkdirSync("dist");
@@ -27,6 +27,7 @@ if (!fs.existsSync("zipped")){
     fs.mkdirSync("zipped");
 }
 
+app.use(compression());
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
@@ -40,10 +41,14 @@ app.get('/', function (req, res) {
 app.get('/download', function (req, res) {
   console.log("/download request");
   var username = req.query.username;
-  if(username != null) {
+  if(username !== null) {
     var options = {
         url: 'http://cpv2api.com/pens/public/' + username,
-        json: true
+        json: true,
+        headers: {
+          'Accept': 'application/json',
+          'Accept-Charset': 'utf-8',
+        }
     };
     request.get(options).then(function(body) {
       if(body.success == 'true') {
@@ -74,25 +79,32 @@ function downloadPenList(username, res) {
   var fetchingPens = true;
   var penJsonList = [];
 
+  console.log("Fetching pens");
   async.whilst(
       function() { return fetchingPens == true; },
       function(callback) {
           penID++;
           var currOptions = {
               url: 'http://cpv2api.com/pens/public/' + username + "/?page=" + penID,
-              json: true
+              json: true,
+              headers: {
+                'Accept': 'application/json',
+                'Accept-Charset': 'utf-8',
+              }
           };
           //console.log(currOptions.url);
           request.get(currOptions).then(function(body) {
-              var pensJson = body.data;
+              pensJson = body.data;
+              //console.log(pensJson);
               //console.log("Success: " + body.success);
               if(body.success == 'true') {
                 //console.log(pensJson.length);
                 for(var i = 0; i < pensJson.length; i++) {
-                    if(pensJson[i].id != undefined) {
-                      //console.log(pensJson[i].id);
-                      penJsonList.push(pensJson[i].id);
-                    }
+                    //var penID = pensJson[i].id;
+                    penJsonList.push(pensJson[i].id);
+                    console.log(pensJson[i].id);
+                    //if(pensJson[i].id != undefined) {
+                    //}
                 }
               } else {
                 fetchingPens = false;
@@ -102,16 +114,16 @@ function downloadPenList(username, res) {
           });
       },
       function (err, n) {
-        if(penJsonList != null) {
-          console.log("Pens: " + penJsonList.length);
-          downloadPensLocally(penJsonList, username, res);
-        }
+        console.log("Pens: " + penJsonList.length);
+        downloadPensLocally(penJsonList, username, res);
       }
   );
 }
 
 function downloadPensLocally(penList, username, res){
   var userDir = __dirname + directory + username + "/";
+  console.log("Downloading Pens");
+
   async.each(penList, function(pen, callback) {
     try {
       var penID = pen;
@@ -145,22 +157,23 @@ function zipPens(userDir, username, res) {
   var zipFile = __dirname + "/zipped/" + username + ".zip";
 
   var output = fs.createWriteStream(zipFile);
-  var archive = archiver(zipFile, {
+  var zip = archiver(zipFile, {
       zlib: { level: 9 },
       store: false
   });
 
-  archive.on('warning', function(err) {
+  zip.on('warning', function(err) {
     if (err.code === 'ENOENT') {
         console.log("ENOENT");
     } else {
         console.log(err);
         throw err;
+        res.end();
     }
   });
 
   output.on('close', function() {
-    console.log(archive.pointer() + ' total bytes');
+    //console.log(zip.pointer() + ' total bytes');
     console.log('archiver has been finalized and the output file descriptor has closed.');
 
     res.sendFile(zipFile, function(err){
@@ -174,12 +187,12 @@ function zipPens(userDir, username, res) {
 
   });
 
-  archive.on('error', function(err) {
+  zip.on('error', function(err) {
     console.log(err);
   });
-  archive.pipe(output);
-  archive.directory(userDir, false);
-  archive.finalize().then(function(){
+  zip.pipe(output);
+  zip.directory(userDir, false);
+  zip.finalize().then(function(){
     console.log('Finished zip');
   });
 }
