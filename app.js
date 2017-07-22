@@ -27,10 +27,11 @@ if (cluster.isMaster) {
   console.log(`Master ${process.pid} is running`);
 
   const numCPUs = require('os').cpus().length;
+  cluster.fork();
 
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
-  }
+  //for (let i = 0; i < numCPUs; i++) {
+  //  cluster.fork();
+  //}
 
   cluster.on('exit', (worker, code, signal) => {
     console.log('Worker %d died :(', worker.id);
@@ -42,10 +43,6 @@ if (cluster.isMaster) {
   const express = require('express');
   const app = express();
   var router = express.Router();
-
-  setInterval(function () {
-    global.gc();
-  }, 30000);
 
   app.use(compression());
   app.set('views', path.join(__dirname, 'views'));
@@ -76,7 +73,7 @@ if (cluster.isMaster) {
         } else {
           var errMessage = "Error no pens found";
           //console.log(errMessage);
-          global.gc();
+          //global.gc();
           res.writeHead(400, errMessage, {'content-type' : 'text/plain'});
           res.end(errMessage);
         }
@@ -154,7 +151,7 @@ if (cluster.isMaster) {
     async.series([
     function(callback) {
       removePenDirectory(username, "noZip", res);
-        callback(null);
+      callback(null);
     },
     function(callback) {
         res.statusMessage = "Error request timeout, maybe too may pens :(";
@@ -163,7 +160,7 @@ if (cluster.isMaster) {
     }
     ],
     function(err) {
-      global.gc();
+      //global.gc();
       console.log("Timeout handled");
     });
   }
@@ -215,8 +212,8 @@ if (cluster.isMaster) {
       } else {
           //console.log(err);
           removePenDirectory(username, zipFile, res);
-          res.end();
       }
+      res.end();
     });
 
     output.on('close', function() {
