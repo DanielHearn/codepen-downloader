@@ -8,11 +8,17 @@ var compression = require('compression');
 var archiver = require('archiver-promise');
 const request = require('request-promise');
 
+//var osmosis = require('osmosis');
+var cheerio = require('cheerio');
+//const jsdom = require("jsdom");
+//const { JSDOM } = jsdom;
+
 var path = require('path');
 
-const cpUrlStart = "https://codepen.io/";
-const cpUrlMid = "/share/zip/";
-var directory = "/dist/";
+const siteUrl = "https://codepen.io/";
+const shareUrl = "/share/zip/";
+var dist = "/dist/";
+var urlPattern = new RegExp("[^/]+(?=/$|$)");
 
 if (!fs.existsSync("dist")){
     fs.mkdirSync("dist");
@@ -51,6 +57,14 @@ if (cluster.isMaster) {
   app.use(router);
   app.use(express.static(path.join(__dirname, 'public')));
 
+	var allowCrossDomain = function(req, res, next) {
+			res.header('Access-Control-Allow-Origin', '*');
+			res.header('Access-Control-Allow-Methods', 'GET');
+			res.header('Access-Control-Allow-Headers', 'Content-Type, X-XSRF-TOKEN');
+			next();
+	}
+	app.use(allowCrossDomain);
+
   app.get('/', function (req, res) {
     res.render('index');
   });
@@ -59,6 +73,7 @@ if (cluster.isMaster) {
     console.log("/download request");
     var username = req.query.username;
     if(username !== null) {
+
       var options = {
           url: 'http://cpv2api.com/pens/public/' + username,
           json: true,
@@ -69,7 +84,8 @@ if (cluster.isMaster) {
       };
       request.get(options).then(function(firstPenPage) {
         if(firstPenPage.success == 'true') {
-          downloadPenList(username, firstPenPage.data, res);
+          retrievePenID(username, res)
+          //downloadPenList(username, firstPenPage.data, res);
         } else {
           var errMessage = "Error no pens found";
           //console.log(errMessage);
@@ -88,6 +104,35 @@ if (cluster.isMaster) {
 
   });
 
+
+  function retrievePenID(username, res) {
+    var page = 1;
+    var url = siteUrl + '/'+username+'/pens/public/grid/' + page + '/?grid_type=list';
+    console.log(url);
+    request(url, function(err, response, body){
+			if(err){
+				res.send({ error: "Hmm, error occured try again" }); // lol...
+			}
+  		var $ = cheerio.load(JSON.parse(body).page.html);
+  		var $pens = $('.item-in-list-view');
+  		var data = [];
+
+  		$pens.each(function(){
+  			var $pen = $(this);
+  			var $link = $pen.find('.title a');
+  			var id = $link.attr('href');
+  			id = urlPattern.exec(id);
+  			id = id[0];
+  			data.push({
+  				id: id,
+  			});
+
+  		});
+      console.log("Pens: " + data.length);
+      console.log(data);
+    });
+  }
+
   function downloadPenList(username, firstPenPage, res) {
     var options = {
         url: 'http://cpv2api.com/pens/public/' + username,
@@ -101,8 +146,6 @@ if (cluster.isMaster) {
         penJsonList.push(firstPenPage[i].id);
         //console.log(firstPenPage[i].id);
     }
-
-    setTimeout(requestTimeout, 30000, username, res);
 
     console.log("Fetching pens");
     async.whilst(
@@ -166,13 +209,13 @@ if (cluster.isMaster) {
   }
 
   function downloadPensLocally(penList, username, res){
-    var userDir = __dirname + directory + username + "/";
+    var userDir = __dirname + dist + username + "/";
     console.log("Downloading Pens");
 
     async.each(penList, function(pen, callback) {
       try {
         var penID = pen;
-        var url = cpUrlStart + username + cpUrlMid + penID;
+        var url = siteUrl + username + shareUrl + penID;
         ////console.log(url);
         download(url, userDir).then(() => {
           callback();
@@ -242,7 +285,7 @@ if (cluster.isMaster) {
   }
 
   function removePenDirectory(username, zipFile, res) {
-    rimraf(__dirname + directory + username + "/", function(err) {
+    rimraf(__dirname + dist + username + "/", function(err) {
       if ( err) {
         console.log('Rimraf error when removing pen directory: ' + error);
       }
