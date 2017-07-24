@@ -1,6 +1,9 @@
 {
   "name": "codepen-downloader",
   "version": "1.0.0",
+  "engines": {
+    "node": "8.2.1"
+  },
   "private": true,
   "scripts": {
     "start": "node --expose-gc app.js"

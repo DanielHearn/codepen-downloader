@@ -75,21 +75,20 @@ if (cluster.isMaster) {
     if(username !== null) {
 
       var options = {
-          url: 'http://cpv2api.com/pens/public/' + username,
-          json: true,
-          headers: {
-            'Accept': 'application/json',
-            'Accept-Charset': 'utf-8',
-          }
-      };
+        url: 'http://cpv2api.com/pens/public/' + username,
+        json: true,
+        headers: {
+          'Accept': 'application/json',
+          'Accept-Charset': 'utf-8',
+        }
+      }
+
       request.get(options).then(function(firstPenPage) {
         if(firstPenPage.success == 'true') {
           retrievePenID(username, res)
-          //downloadPenList(username, firstPenPage.data, res);
+          //downloadPenList(username, res);
         } else {
           var errMessage = "Error no pens found";
-          //console.log(errMessage);
-          //global.gc();
           res.writeHead(400, errMessage, {'content-type' : 'text/plain'});
           res.end(errMessage);
         }
@@ -133,19 +132,11 @@ if (cluster.isMaster) {
     });
   }
 
-  function downloadPenList(username, firstPenPage, res) {
-    var options = {
-        url: 'http://cpv2api.com/pens/public/' + username,
-    };
+  function downloadPenList(username, res) {
 
     var penID = 1;
     var fetchingPens = true;
     var penJsonList = [];
-
-    for(var i = 0; i < firstPenPage.length; i++) {
-        penJsonList.push(firstPenPage[i].id);
-        //console.log(firstPenPage[i].id);
-    }
 
     console.log("Fetching pens");
     async.whilst(
