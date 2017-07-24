@@ -8,10 +8,7 @@ var compression = require('compression');
 var archiver = require('archiver-promise');
 const request = require('request-promise');
 
-//var osmosis = require('osmosis');
 var cheerio = require('cheerio');
-//const jsdom = require("jsdom");
-//const { JSDOM } = jsdom;
 
 var path = require('path');
 
@@ -33,11 +30,11 @@ if (cluster.isMaster) {
   console.log(`Master ${process.pid} is running`);
 
   const numCPUs = require('os').cpus().length;
-  cluster.fork();
+  //cluster.fork();
 
-  //for (let i = 0; i < numCPUs; i++) {
-  //  cluster.fork();
-  //}
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
 
   cluster.on('exit', (worker, code, signal) => {
     console.log('Worker %d died :(', worker.id);
@@ -85,8 +82,7 @@ if (cluster.isMaster) {
 
       request.get(options).then(function(firstPenPage) {
         if(firstPenPage.success == 'true') {
-          retrievePenID(username, res)
-          //downloadPenList(username, res);
+          downloadPenList(username, res);
         } else {
           var errMessage = "Error no pens found";
           res.writeHead(400, errMessage, {'content-type' : 'text/plain'});
@@ -103,38 +99,9 @@ if (cluster.isMaster) {
 
   });
 
-
-  function retrievePenID(username, res) {
-    var page = 1;
-    var url = siteUrl + '/'+username+'/pens/public/grid/' + page + '/?grid_type=list';
-    console.log(url);
-    request(url, function(err, response, body){
-			if(err){
-				res.send({ error: "Hmm, error occured try again" }); // lol...
-			}
-  		var $ = cheerio.load(JSON.parse(body).page.html);
-  		var $pens = $('.item-in-list-view');
-  		var data = [];
-
-  		$pens.each(function(){
-  			var $pen = $(this);
-  			var $link = $pen.find('.title a');
-  			var id = $link.attr('href');
-  			id = urlPattern.exec(id);
-  			id = id[0];
-  			data.push({
-  				id: id,
-  			});
-
-  		});
-      console.log("Pens: " + data.length);
-      console.log(data);
-    });
-  }
-
   function downloadPenList(username, res) {
 
-    var penID = 1;
+    var penID = 0;
     var fetchingPens = true;
     var penJsonList = [];
 
@@ -143,32 +110,39 @@ if (cluster.isMaster) {
         function() { return fetchingPens == true; },
         function(callback) {
             penID++;
-            var currOptions = {
-                url: 'http://cpv2api.com/pens/public/' + username + "/?page=" + penID,
-                json: true,
-                headers: {
-                  'Accept': 'application/json',
-                  'Accept-Charset': 'utf-8',
-                }
-            };
-            ////console.log(currOptions.url);
-            request.get(currOptions).then(function(body) {
-                pensJson = body.data;
-                if(body.success == 'true') {
-                  ////console.log(pensJson.length);
-                  for(var i = 0; i < pensJson.length; i++) {
-                      //var penID = pensJson[i].id;
-                      penJsonList.push(pensJson[i].id);
-                      //console.log(pensJson[i].id);
-                      //if(pensJson[i].id != undefined) {
-                      //}
-                  }
-                } else {
+
+            var url = siteUrl + '/'+username+'/pens/public/grid/' + penID + '/?grid_type=list';
+            console.log(url);
+            try {
+              request(url, function(err, response, body){
+          			if(err){
+          				res.send({ error: "Hmm, error occured try again" }); // lol...
+          			}
+            		var $ = cheerio.load(JSON.parse(body).page.html);
+            		var $pens = $('.item-in-list-view');
+            		var data = [];
+
+            		$pens.each(function(){
+            			var $pen = $(this);
+            			var $link = $pen.find('.title a');
+            			var id = $link.attr('href');
+            			id = urlPattern.exec(id);
+            			id = id[0];
+            			data.push({
+            				id: id,
+            			});
+                  penJsonList.push(id);
+            		});
+                if (data.length == 0) {
                   fetchingPens = false;
                   console.log("Finished while");
                 }
                 callback(null, fetchingPens);
-            });
+                //console.log(data);
+              });
+            } catch (e) {
+              throw e;
+            }
         },
         function (err, n) {
           if(err) {
@@ -194,7 +168,6 @@ if (cluster.isMaster) {
     }
     ],
     function(err) {
-      //global.gc();
       console.log("Timeout handled");
     });
   }
@@ -202,6 +175,7 @@ if (cluster.isMaster) {
   function downloadPensLocally(penList, username, res){
     var userDir = __dirname + dist + username + "/";
     console.log("Downloading Pens");
+    var pensDownloaded = 0;
 
     async.each(penList, function(pen, callback) {
       try {
@@ -230,7 +204,6 @@ if (cluster.isMaster) {
 
   function zipPens(userDir, username, res) {
     console.log("Starting zip");
-    //console.log(userDir);
 
     var zipFile = __dirname + "/zipped/" + username + ".zip";
 
@@ -240,52 +213,60 @@ if (cluster.isMaster) {
         store: false
     });
 
-    zip.on('warning', function(err) {
-      if (err.code === 'ENOENT') {
-          //console.log("ENOENT");
-      } else {
-          //console.log(err);
-          removePenDirectory(username, zipFile, res);
-      }
-      res.end();
-    });
-
-    output.on('close', function() {
-      //console.log(zip.pointer() + ' total bytes');
-      console.log('archiver has been finalized and the output file descriptor has closed.');
-
-      res.sendFile(zipFile, function(err){
-        console.log("Sent file");
-        if ( err) {
-          console.log('Download err: ' + err);
+    try {
+      zip.on('warning', function(err) {
+        if (err.code === 'ENOENT') {
+            //console.log("ENOENT");
+        } else {
+            //console.log(err);
+            removePenDirectory(username, zipFile, res);
         }
-        removePenDirectory(username, zipFile, res);
         res.end();
       });
 
-    });
+      output.on('close', function() {
+        //console.log(zip.pointer() + ' total bytes');
+        console.log('archiver has been finalized and the output file descriptor has closed.');
 
-    zip.on('error', function(err) {
-      console.log(err);
-    });
-    zip.pipe(output);
-    zip.directory(userDir, false);
-    zip.finalize().then(function(){
-      console.log('Finished zip');
-    });
+        res.sendFile(zipFile, function(err){
+          console.log("Sent file");
+          if ( err) {
+            console.log('Download err: ' + err);
+          }
+          removePenDirectory(username, zipFile, res);
+          res.end();
+        });
+
+      });
+
+      zip.on('error', function(err) {
+        console.log(err);
+      });
+      zip.pipe(output);
+      zip.directory(userDir, false);
+      zip.finalize().then(function(){
+        console.log('Finished zip');
+      });
+    } catch (e) {
+      throw e;
+    }
   }
 
   function removePenDirectory(username, zipFile, res) {
-    rimraf(__dirname + dist + username + "/", function(err) {
-      if ( err) {
-        console.log('Rimraf error when removing pen directory: ' + error);
-      }
-    });
-    if(zipFile != "noZip") {
-      fs.unlink(zipFile, (err) => {
-        if (err) throw err;
-        console.log('Successfully deleted zip');
+    try {
+      rimraf(__dirname + dist + username + "/", function(err) {
+        if ( err) {
+          console.log('Rimraf error when removing pen directory: ' + error);
+        }
       });
+      if(zipFile != "noZip") {
+        fs.unlink(zipFile, (err) => {
+          if (err) throw err;
+          console.log('Successfully deleted zip');
+        });
+      }
+    } catch (e) {
+      throw e;
     }
   }
 
