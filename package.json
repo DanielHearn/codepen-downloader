@@ -18,7 +18,6 @@
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.3",
     "download": "^6.2.5",
-    "download-file": "^0.1.5",
     "express": "^4.15.3",
     "http": "0.0.0",
     "https": "^1.0.0",
@@ -29,8 +28,7 @@
     "pug": "^2.0.0-rc.2",
     "request-promise": "^4.2.1",
     "rimraf": "^2.6.1",
-    "serve-favicon": "~2.4.2",
-    "wait.for": "^0.6.6"
+    "serve-favicon": "~2.4.2"
   },
   "description": "Codepen downloader",
   "main": "app.js",
