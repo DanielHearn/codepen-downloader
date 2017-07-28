@@ -1,4 +1,4 @@
-var http = require('http');
+var https = require('https');
 var fs = require('fs');
 var download = require('download');
 var rimraf = require('rimraf');
@@ -7,6 +7,7 @@ var async = require('async');
 var compression = require('compression');
 var archiver = require('archiver-promise');
 const request = require('request-promise');
+var dateFormat = require('dateformat');
 
 var cheerio = require('cheerio');
 
@@ -30,6 +31,7 @@ if (cluster.isMaster) {
   console.log(`Master ${process.pid} is running`);
 
   const numCPUs = require('os').cpus().length;
+  //const numCPUs = 2;
   //cluster.fork();
 
   for (let i = 0; i < numCPUs; i++) {
@@ -69,6 +71,10 @@ if (cluster.isMaster) {
   app.get('/download', function (req, res) {
     console.log("/download request");
     var username = req.query.username;
+    var formattedDate = dateFormat('isoDate');
+    var userDir = __dirname + dist + formattedDate + "-" + username + "/";
+    var zipFile = __dirname + "/zipped/" + formattedDate + "-" + username + ".zip";
+
     if(username !== null) {
 
       var options = {
@@ -82,7 +88,7 @@ if (cluster.isMaster) {
 
       request.get(options).then(function(firstPenPage) {
         if(firstPenPage.success == 'true') {
-          downloadPenList(username, res);
+          downloadPenList(username, userDir, zipFile, res);
         } else {
           var errMessage = "Error no pens found";
           res.writeHead(400, errMessage, {'content-type' : 'text/plain'});
@@ -92,27 +98,26 @@ if (cluster.isMaster) {
 
       } else {
         //console.log("Error invalid username");
-        res.send("Error invalid username");
-        res.statusMessage = "Error invalid username";
-        res.status(400).end();
+        res.writeHead(400, "Error invalid username", {'content-type' : 'text/plain'});
+        res.end("Error invalid username");
       }
-
   });
 
-  function downloadPenList(username, res) {
+  function downloadPenList(username, userDir, zipFile, res) {
 
     var penID = 0;
     var fetchingPens = true;
     var penJsonList = [];
+
+    //setTimeout(requestTimeout, 100000, userDir, zipFile, res);
 
     console.log("Fetching pens");
     async.whilst(
         function() { return fetchingPens == true; },
         function(callback) {
             penID++;
-
             var url = siteUrl + '/'+username+'/pens/public/grid/' + penID + '/?grid_type=list';
-            console.log(url);
+            //console.log(url);
             try {
               request(url, function(err, response, body){
           			if(err){
@@ -131,6 +136,7 @@ if (cluster.isMaster) {
             			data.push({
             				id: id,
             			});
+                  //penUrl = siteUrl + username + shareUrl + id;
                   penJsonList.push(id);
             		});
                 if (data.length == 0) {
@@ -146,66 +152,103 @@ if (cluster.isMaster) {
         },
         function (err, n) {
           if(err) {
-            removePenDirectory(username, zipFile, res);
+            removePenDirectory(userDir, zipFile, res);
           } else {
             console.log("Pens: " + penJsonList.length);
-            downloadPensLocally(penJsonList, username, res);
+            downloadPensLocally(penJsonList, username, userDir, zipFile, res);
           }
         }
     );
   }
 
-  function requestTimeout(username, res) {
+  function requestTimeout(username, userDir, zipFile, res) {
     async.series([
-    function(callback) {
-      removePenDirectory(username, "noZip", res);
-      callback(null);
-    },
-    function(callback) {
-        res.statusMessage = "Error request timeout, maybe too may pens :(";
-        res.status(400).end();
-        callback(null);
-    }
+      function(callback) {
+        removePenDirectory(userDir, zipFile, res);
+        callback(null, "1");
+      },
+      function(callback) {
+        try {
+          removePenDirectory(userDir, zipFile, userDir, res);
+          res.writeHead(400, "Error request timeout, maybe too may pens :(", {'content-type' : 'text/plain'});
+          res.end("Error request timeout, maybe too may pens :(");
+          callback(null, "2");
+        } catch (err) {
+          removePenDirectory(userDir, zipFile, userDir, res);
+          console.log("Request timeout error: " + err);
+        }
+      }
+
     ],
-    function(err) {
+    function(err, results) {
       console.log("Timeout handled");
     });
   }
 
-  function downloadPensLocally(penList, username, res){
-    var userDir = __dirname + dist + username + "/";
+  function downloadPensLocally(penList, username, userDir, zipFile, res){
     console.log("Downloading Pens");
     var pensDownloaded = 0;
+    var penValidationList = [];
+
+    /*
+    Promise.all(penList.map(penUrl => download(penUrl, userDir)))
+    .then(function (text) { // (A)
+      console.log('All files have been downloaded successfully');
+      console.log("Total: " + penList.length);
+      zipPens(userDir, username, res);
+    })
+    .catch(function (error) { // (B)
+      console.error('An error occurred', error);
+    });*/
 
     async.each(penList, function(pen, callback) {
       try {
         var penID = pen;
         var url = siteUrl + username + shareUrl + penID;
-        ////console.log(url);
+
         download(url, userDir).then(() => {
+          penValidationList.push(penID);
+          callback();
+        }, function(err) {
+          //res.writeHead(400, "Pen processing error", {'content-type' : 'text/plain'});
+          //res.end("Pen processing error");
+          //removePenDirectory(userDir, zipFile, userDir, res);
+          console.log("Download error: " + err);
+          //res.writeHead(400, "Pen processing error", {'content-type' : 'text/plain'});
+          //res.end("Pen processing error");
           callback();
         });
       } catch (e) {
         //console.log("Download loop error: " + e);
-        res.writeHead(400, "Pen processing error", {'content-type' : 'text/plain'});
-        res.end(errMessage);
+        /*try {
+          removePenDirectory(userDir, zipFile, userDir, res);
+          res.writeHead(400, "Pen processing error", {'content-type' : 'text/plain'});
+          res.end("Pen processing error");
+        } catch (err) {
+          removePenDirectory(userDir, zipFile, userDir, res);
+          console.log("Downloading pen: " + err);
+          res.writeHead(400, "Pen processing error", {'content-type' : 'text/plain'});
+          res.end("Pen processing error");
+        }*/
       }
     }, function(err) {
         if( err ) {
+          removePenDirectory(userDir, zipFile, userDir, res);
           console.log('A file failed to download');
           res.writeHead(400, "Pen processing error", {'content-type' : 'text/plain'});
-          res.end(errMessage);
+          res.end("Pen processing error");
         } else {
           console.log('All files have been downloaded successfully');
-          zipPens(userDir, username, res);
+          console.log("Validated: " + penValidationList.length + ", total: " + penList.length);
+          setTimeout(function(){ zipPens(userDir, username, userDir, zipFile, res);}, 1000);
         }
     });
+
+
   }
 
-  function zipPens(userDir, username, res) {
+  function zipPens(userDir, username, userDir, zipFile, res) {
     console.log("Starting zip");
-
-    var zipFile = __dirname + "/zipped/" + username + ".zip";
 
     var output = fs.createWriteStream(zipFile);
     var zip = archiver(zipFile, {
@@ -219,7 +262,7 @@ if (cluster.isMaster) {
             //console.log("ENOENT");
         } else {
             //console.log(err);
-            removePenDirectory(username, zipFile, res);
+            removePenDirectory(userDir, zipFile, userDir, res);
         }
         res.end();
       });
@@ -233,7 +276,7 @@ if (cluster.isMaster) {
           if ( err) {
             console.log('Download err: ' + err);
           }
-          removePenDirectory(username, zipFile, res);
+          removePenDirectory(userDir, zipFile, userDir, res);
           res.end();
         });
 
@@ -247,26 +290,28 @@ if (cluster.isMaster) {
       zip.finalize().then(function(){
         console.log('Finished zip');
       });
-    } catch (e) {
-      throw e;
+    } catch (err) {
+      console.log("Zip err: " + err);
     }
   }
 
-  function removePenDirectory(username, zipFile, res) {
+  function removePenDirectory(userDir, zipFile, userDir, res) {
     try {
-      rimraf(__dirname + dist + username + "/", function(err) {
-        if ( err) {
-          console.log('Rimraf error when removing pen directory: ' + error);
-        }
-      });
-      if(zipFile != "noZip") {
+      if (fs.existsSync(userDir)){
+        rimraf(userDir, function(err) {
+          if ( err) {
+            console.log('Rimraf error when removing pen directory: ' + error);
+          }
+        });
+      }
+      if (fs.existsSync(zipFile)){
         fs.unlink(zipFile, (err) => {
           if (err) throw err;
           console.log('Successfully deleted zip');
         });
       }
-    } catch (e) {
-      throw e;
+    } catch (err) {
+      console.log("Remove directory err: " + err);
     }
   }
 

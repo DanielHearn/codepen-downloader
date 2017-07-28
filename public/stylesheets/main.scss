@@ -158,9 +158,12 @@ main {
 }
 
 @media screen and (max-width: 24em) {
-  html body main #penApp #penController {
-    #usernameInput {
-      margin-bottom: 0.75em;
+  html body main #penApp {
+    align-items: flex-start;
+    #penController {
+      #usernameInput {
+        margin-bottom: 0.75em;
+      }
     }
   }
 }

@@ -2,20 +2,22 @@
   "name": "codepen-downloader",
   "version": "1.0.0",
   "engines": {
-    "node": "8.2.1"
+    "node": "7.10.0"
   },
   "private": true,
   "scripts": {
-    "start": "node --expose-gc app.js"
+    "start": "node app.js"
   },
   "dependencies": {
-    "archiver": "^2.0.0",
     "archiver-promise": "^1.0.0",
+    "asap": "^2.0.6",
     "async": "^2.5.0",
     "body-parser": "~1.17.1",
     "cheerio": "^1.0.0-rc.2",
     "compression": "^1.7.0",
+    "connect-timeout": "^1.9.0",
     "cookie-parser": "~1.4.3",
+    "dateformat": "^2.0.0",
     "debug": "~2.6.3",
     "download": "^6.2.5",
     "express": "^4.15.3",
