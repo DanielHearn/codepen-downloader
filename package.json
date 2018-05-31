@@ -1,0 +1,29 @@
+{
+  "name": "downpen",
+  "version": "1.0.0",
+  "description": "A Codepen downloader/backup tool",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DanielHearn/downpen.git"
+  },
+  "author": "Daniel Hearn",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DanielHearn/downpen/issues"
+  },
+  "homepage": "https://github.com/DanielHearn/downpen#readme",
+  "dependencies": {
+    "async": "^2.6.1",
+    "cheerio": "^1.0.0-rc.2",
+    "dateformat": "^3.0.3",
+    "download": "^7.0.0",
+    "moment": "^2.22.1",
+    "path": "^0.12.7",
+    "request": "^2.87.0",
+    "request-promise": "^4.2.2"
+  }
+}
