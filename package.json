@@ -1,48 +1,29 @@
 {
-  "name": "codepen-downloader",
+  "name": "downpen",
   "version": "1.0.0",
-  "engines": {
-    "node": "7.10.0"
-  },
-  "private": true,
-  "scripts": {
-    "start": "node app.js"
-  },
-  "dependencies": {
-    "archiver-promise": "^1.0.0",
-    "asap": "^2.0.6",
-    "async": "^2.5.0",
-    "body-parser": "~1.17.1",
-    "cheerio": "^1.0.0-rc.2",
-    "compression": "^1.7.0",
-    "connect-timeout": "^1.9.0",
-    "cookie-parser": "~1.4.3",
-    "dateformat": "^2.0.0",
-    "debug": "~2.6.3",
-    "download": "^6.2.5",
-    "express": "^4.15.3",
-    "http": "0.0.0",
-    "https": "^1.0.0",
-    "lodash": "^4.17.4",
-    "morgan": "~1.8.1",
-    "node-pre-gyp": "^0.6.36",
-    "osmosis": "^1.1.4",
-    "pug": "^2.0.0-rc.2",
-    "request-promise": "^4.2.1",
-    "rimraf": "^2.6.1",
-    "serve-favicon": "~2.4.2"
-  },
-  "description": "Codepen downloader",
+  "description": "A Codepen downloader/backup tool",
   "main": "app.js",
-  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DanielHearn/codepen-downloader.git"
+    "url": "git+https://github.com/DanielHearn/downpen.git"
   },
-  "author": "",
+  "author": "Daniel Hearn",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/DanielHearn/codepen-downloader/issues"
+    "url": "https://github.com/DanielHearn/downpen/issues"
   },
-  "homepage": "https://github.com/DanielHearn/codepen-downloader#readme"
+  "homepage": "https://github.com/DanielHearn/downpen#readme",
+  "dependencies": {
+    "async": "^2.6.1",
+    "cheerio": "^1.0.0-rc.2",
+    "dateformat": "^3.0.3",
+    "download": "^7.0.0",
+    "moment": "^2.22.1",
+    "path": "^0.12.7",
+    "request": "^2.87.0",
+    "request-promise": "^4.2.2"
+  }
 }
