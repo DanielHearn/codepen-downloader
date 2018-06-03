@@ -1,9 +1,11 @@
 {
   "name": "downpen",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A Codepen downloader/backup tool",
   "main": "app.js",
-  "bin": { "downpen": "app.js" },
+  "bin": {
+    "downpen": "app.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
