@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const request = require('request-promise')
 const async2 = require('async')
 const cheerio = require('cheerio')
