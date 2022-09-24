@@ -4,11 +4,12 @@
   "description": "A Codepen downloader/backup tool",
   "main": "app.js",
   "preferGlobal": true,
+  "type": "module",
   "bin": {
     "downpen": "app.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "download": "node app.js"
   },
   "engines": {
     "node": ">=8.11.2"
@@ -24,13 +25,11 @@
   },
   "homepage": "https://github.com/DanielHearn/downpen#readme",
   "dependencies": {
-    "async": "^2.6.1",
-    "cheerio": "^1.0.0-rc.2",
-    "dateformat": "^3.0.3",
-    "download": "^7.0.0",
-    "moment": "^2.22.1",
+    "dateformat": "^5.0.3",
     "path": "^0.12.7",
-    "request": "^2.87.0",
-    "request-promise": "^4.2.2"
+    "puppeteer": "^18.0.5"
+  },
+  "devDependencies": {
+    "eslint": "^8.24.0"
   }
 }
