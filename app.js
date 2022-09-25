@@ -56,12 +56,16 @@ async function initialize () {
       waitUntil: 'networkidle2',
     });
     await downloadPens(username)
-    await page.waitForTimeout(20000);
+    await page.waitForTimeout(randomNumber(15000, 25000));
     await browser.close();
   } else {
     console.error('Missing Codepen username, email, password within arguments');
     return false;
   }
+}
+
+function randomNumber(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function getUserPageUrl (username) {
@@ -88,7 +92,7 @@ async function login () {
   await page.focus(passSelector);
   await page.keyboard.type(password);
   await page.click('#log-in-button');
-  await page.waitForTimeout(5000);
+  await page.waitForTimeout(randomNumber(4000, 7000));
   await page.waitForSelector('.logged-in');
 
   const totalPens = downloadPens.length + erroredPens.length;
@@ -124,7 +128,7 @@ async function initializeFolders () {
 
 async function downloadPens () {
   await initializeFolders();
-  await page.waitForTimeout(5000);
+  await page.waitForTimeout(randomNumber(4000, 7000));
   let nextPageAvailable = true;
   let pageNumber = 1;
   while(nextPageAvailable) {
@@ -170,9 +174,9 @@ async function downloadPens () {
 
     if (nextPageAvailable) {
       console.log('Next page available');
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(randomNumber(1500, 3000));
       await page.click('[data-direction="next"]');
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(randomNumber(2000, 4000));
       pageNumber++;
     } else {
       console.log('Finished downloading, no more pages available');
@@ -201,7 +205,7 @@ async function downloadPen (url) {
       console.log(`Found export link for: ${url}`);
       await linkHandlers[0].click();
       await penPage.click('[data-test-id="export-zip"]');
-      await penPage.waitForTimeout(3000);
+      await penPage.waitForTimeout(randomNumber(2500, 5000));
       await penPage.close();
       return true;
     } else {
