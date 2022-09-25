@@ -64,14 +64,17 @@ async function initialize () {
   }
 }
 
+// Generate random numbers between min and max numbers to mimic user randomness
 function randomNumber(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+// Generate user page with list view for more pens to be visible compared to the grid view
 function getUserPageUrl (username) {
   return `${siteUrl}${username}/pens/public?grid_type=list`;
 }
 
+// Check user page so that it can differentiate 
 async function checkUserPage (userPageUrl) {
   await page.goto(userPageUrl, {
     waitUntil: 'networkidle2',
@@ -80,6 +83,7 @@ async function checkUserPage (userPageUrl) {
   return exists;
 }
 
+// Need to login to be able to export
 async function login () {
   await page.goto('https://codepen.io/login', {
     waitUntil: 'networkidle2',
@@ -133,8 +137,10 @@ async function downloadPens () {
   await page.waitForTimeout(randomNumber(4000, 7000));
   let nextPageAvailable = true;
   let pageNumber = 1;
+  // Iterate though each page, keeping the pen list page open
   while(nextPageAvailable) {
     console.log(`Downloading from page ${pageNumber}`);
+    // Check next page button visible
     nextPageAvailable = await page.$eval('[data-direction="next"]', () => true).catch(() => false);
     const elements = await page.$$(".profile-grid-pens tr .title a");
     const links = [];
@@ -144,6 +150,7 @@ async function downloadPens () {
     }
 
     console.log(`Found ${links.length} pens on page ${pageNumber}`);
+    // Iterate though list of pen links, opening each pen in a new tab and exporting the pen
     let sequence = Promise.resolve();
     links.forEach(link => {
       sequence = 
@@ -178,7 +185,7 @@ async function downloadPens () {
       console.log('Next page available');
       await page.waitForTimeout(randomNumber(1500, 3000));
       await page.click('[data-direction="next"]');
-      await page.waitForTimeout(randomNumber(2000, 4000));
+      await page.waitForTimeout(randomNumber(3000, 6000));
       pageNumber++;
     } else {
       console.log('Finished downloading, no more pages available');
@@ -194,6 +201,7 @@ async function downloadPen (url) {
     console.log(`Attempting download for: ${url}`);
     penPage.setDefaultTimeout(10000);
     const client = await penPage.target().createCDPSession(); 
+    // Allow downloads and send to the user/date folder
     await client.send('Page.setDownloadBehavior', {
       behavior: 'allow',
       userDataDir: './',
@@ -202,10 +210,12 @@ async function downloadPen (url) {
     await penPage.goto(url, {
       waitUntil: 'networkidle2',
     });
+    // Click export button on bottom right of footer
     const linkHandlers = await penPage.$x("//button[contains(text(), 'Export')]");
     if (linkHandlers.length > 0) {
       console.log(`Found export link for: ${url}`);
       await linkHandlers[0].click();
+      // Click export to zip which should start download
       await penPage.click('[data-test-id="export-zip"]');
       await penPage.waitForTimeout(randomNumber(2500, 5000));
       await penPage.close();
