@@ -9,6 +9,7 @@ const siteUrl = 'https://codepen.io/';
 const args = process.argv.slice(2);
 const now = new Date();
 const formattedDate = dateFormat(now, 'dd_mm_yyyy_HH-MM');
+const maxRetries = 4;
 
 let username = null;
 let password = null;
@@ -26,7 +27,7 @@ async function initialize () {
     username = args[0];
     password = args[1];
     userDir = `./downloaded/${username}/${formattedDate}/`;
-    console.log(`Check if Codepen '${username}' exists`);
+    console.log(`Check if Codepen user '${username}' exists`);
     console.log('A chromium browser will open during the download process')
     browser = await puppeteer.launch({
       headless: false,
@@ -89,6 +90,10 @@ async function login () {
   await page.click('#log-in-button');
   await page.waitForTimeout(5000);
   await page.waitForSelector('.logged-in');
+
+  const totalPens = downloadPens.length + erroredPens.length;
+  console.log(`Successfully downloaded ${downloadPens.length}/${totalPens}`)
+
   return true;
 }
 
@@ -137,17 +142,24 @@ async function downloadPens () {
       sequence = 
         sequence
           .then(async () => {
+            const id = link.split('/').pop()
             let retries = 1;
             let success = false
-            while (retries < 4 && !success) {
+            while (retries < maxRetries && !success) {
               retries++
               const result = await downloadPen(link)
               if (result) {
                 success = true
+                downloadedPens.push(id)
               } else {
                 console.log(`Retrying download for ${link}, attempt ${retries}`)
               }
             }
+
+            if (retries === maxRetries) {
+              erroredPens.push(id)
+            }
+
             return true
             
     }) ;
