@@ -93,6 +93,7 @@ async function login () {
 
   const totalPens = downloadPens.length + erroredPens.length;
   console.log(`Successfully downloaded ${downloadPens.length}/${totalPens}`)
+  console.log(`Failed to download the following pen IDs: ${erroredPens.join(', ')}`)
 
   return true;
 }
