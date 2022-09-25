@@ -8,7 +8,7 @@ import path from 'path';
 const siteUrl = 'https://codepen.io/';
 const args = process.argv.slice(2);
 const now = new Date();
-const formattedDate = dateFormat(now, 'dd_mm_yyyy_HH-MM');
+const formattedDate = dateFormat(now, 'yyyy_mm_dd_HH-MM');
 const maxRetries = 4;
 
 let username = null;
@@ -102,6 +102,7 @@ async function login () {
   return true;
 }
 
+// Check folder exists and create if missing
 async function checkFolderExists (dir) {
   try {
     if (fs.existsSync(dir)) {
@@ -120,6 +121,7 @@ async function makeFolder (dir) {
   fs.mkdirSync(dir);
 }
 
+// Create base missing folders if missing and create a folder for the current backup based on the date
 async function initializeFolders () {
   await checkFolderExists('downloaded');
   await checkFolderExists(`downloaded/${username}`);
