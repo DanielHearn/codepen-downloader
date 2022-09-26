@@ -1,13 +1,13 @@
 # Downpen
 > Codepen backup download tool
 
-- Downpen allows for exporting for all of a user's pens from Downpen
+- Downpen allows for exporting for all of a user's pens from Codepen
 
 # To Run
 
 1. npm install
 2. node app.js "username" "password"
-- username and password should be your codepen username and password which is required to export pens
+- username and password should be your codepen username and password which is required by the site to export pens
 
 
 ## Meta
